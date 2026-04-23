@@ -26,7 +26,36 @@ const getAllPosts = async (req, res) => {
     }
 };
 
+const getPostById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const post = await pool.query(
+            "SELECT posts.id, posts.title, posts.content, posts.created_at, users.username FROM posts JOIN users ON posts.user_id = users.id WHERE posts.id = $1",
+            [id]
+        );
+        if (post.rows.length === 0) return res.status(404).json({ error: "Post not found" });
+        res.json(post.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+const deletePost = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedPost = await pool.query("DELETE FROM posts WHERE id = $1 RETURNING *", [id]);
+        if (deletedPost.rows.length === 0) return res.status(404).json({ error: "Post not found" });
+        res.json({ message: "Post deleted successfully" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
 module.exports = {
     createPost,
-    getAllPosts
+    getAllPosts,
+    getPostById,
+    deletePost
 };
