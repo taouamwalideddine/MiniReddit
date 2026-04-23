@@ -1,0 +1,54 @@
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  min-height: 100vh;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #ff4500;
+  color: white;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links a {
+  font-weight: bold;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+main {
+  padding: 2rem;
+}
+
+input, textarea, button {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #ff4500;
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #cc3700;
+}
