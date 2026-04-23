@@ -29,32 +29,38 @@ function Register() {
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      {error && <p style={{color: 'red'}}>{error}</p>}
+    <div className="auth-container card">
+      <h2>Join MiniReddit</h2>
+      {error && <p style={{color: '#DC2626', marginBottom: '1rem', textAlign: 'center'}}>{error}</p>}
       <form onSubmit={handleRegister}>
-        <input 
-          type="text" 
-          placeholder="Username" 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)} 
-          required 
-        />
-        <input 
-          type="email" 
-          placeholder="Email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          required 
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          required 
-        />
-        <button type="submit">Register</button>
+        <div className="form-group">
+          <input 
+            type="text" 
+            placeholder="Username" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            required 
+          />
+        </div>
+        <div className="form-group">
+          <input 
+            type="email" 
+            placeholder="Email Address" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
+        </div>
+        <div className="form-group">
+          <input 
+            type="password" 
+            placeholder="Password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
+        </div>
+        <button type="submit">Create Account</button>
       </form>
     </div>
   );
