@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 
 function PostDetail() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [loading, setLoading] = useState(true);
   
   // Edit State
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
 
+  // Toasts & Modals
+  const [toastMessage, setToastMessage] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const navigate = useNavigate();
   const currentUserId = localStorage.getItem('userId');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   const fetchPostAndComments = async () => {
     try {
@@ -21,8 +31,10 @@ function PostDetail() {
       if (postRes.ok) {
         const postData = await postRes.json();
         setPost(postData);
-        setEditTitle(postData.title);
-        setEditContent(postData.content);
+        if (!editing) {
+          setEditTitle(postData.title);
+          setEditContent(postData.content);
+        }
       } else {
         navigate('/');
         return;
@@ -35,12 +47,33 @@ function PostDetail() {
       }
     } catch (err) {
       console.error('Error fetching post details', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchPostAndComments();
   }, [id]);
+
+  const handleVote = async (type) => {
+    if (!currentUserId) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await fetch(`http://localhost:3000/api/posts/${id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUserId, vote_type: type })
+      });
+      if (response.ok) {
+        fetchPostAndComments();
+      }
+    } catch (err) {
+      console.error('Error voting', err);
+    }
+  };
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -58,6 +91,7 @@ function PostDetail() {
       });
       if (response.ok) {
         setNewComment('');
+        showToast("Comment added!");
         fetchPostAndComments();
       }
     } catch (err) {
@@ -66,7 +100,6 @@ function PostDetail() {
   };
 
   const handleDeletePost = async () => {
-    if(!confirm("Are you sure you want to delete this post?")) return;
     try {
       const response = await fetch(`http://localhost:3000/api/posts/${id}`, {
         method: 'DELETE'
@@ -89,6 +122,7 @@ function PostDetail() {
       });
       if(response.ok) {
         setEditing(false);
+        showToast("Post updated successfully!");
         fetchPostAndComments();
       }
     } catch(err) {
@@ -96,47 +130,86 @@ function PostDetail() {
     }
   };
 
-  if (!post) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div className="card skeleton" style={{ height: '200px' }}></div>
+        <div className="card skeleton" style={{ height: '100px' }}></div>
+      </div>
+    );
+  }
+
+  if (!post) return null;
 
   return (
     <div>
-      <div className="card">
-        {editing ? (
-          <form onSubmit={handleUpdatePost}>
-            <input 
-              type="text" 
-              value={editTitle} 
-              onChange={(e) => setEditTitle(e.target.value)} 
-              required 
-              style={{marginBottom: '1rem'}}
-            />
-            <textarea 
-              value={editContent} 
-              onChange={(e) => setEditContent(e.target.value)} 
-              required 
-              rows="5"
-              style={{marginBottom: '1rem'}}
-            />
-            <div className="action-bar">
-              <button type="submit">Save Changes</button>
-              <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>Cancel</button>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="toast-container">
+          <div className="toast">{toastMessage}</div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Delete Post</h3>
+            <p>Are you sure you want to delete this post? This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+              <button className="btn-danger" onClick={handleDeletePost}>Delete</button>
             </div>
-          </form>
-        ) : (
-          <>
-            <h1 className="post-title" style={{ fontSize: '1.8rem' }}>{post.title}</h1>
-            <p className="post-meta" style={{ marginBottom: '1.5rem' }}>Posted by u/{post.username}</p>
-            <p className="post-content" style={{ whiteSpace: 'pre-wrap', fontSize: '1.1rem' }}>{post.content}</p>
-            
-            {/* Creator Controls */}
-            {currentUserId && parseInt(currentUserId) === post.user_id && (
-              <div className="action-bar" style={{ marginTop: '2rem' }}>
-                <button className="btn-secondary" onClick={() => setEditing(true)}>Edit Post</button>
-                <button className="btn-danger" onClick={handleDeletePost}>Delete Post</button>
+          </div>
+        </div>
+      )}
+
+      <div className="card post-layout">
+        <div className="vote-container">
+          <button className="vote-btn upvote" onClick={() => handleVote(1)}>▲</button>
+          <span className="vote-score">{post.score}</span>
+          <button className="vote-btn downvote" onClick={() => handleVote(-1)}>▼</button>
+        </div>
+
+        <div className="post-body">
+          {editing ? (
+            <form onSubmit={handleUpdatePost}>
+              <input 
+                type="text" 
+                value={editTitle} 
+                onChange={(e) => setEditTitle(e.target.value)} 
+                required 
+                style={{marginBottom: '1rem'}}
+              />
+              <textarea 
+                value={editContent} 
+                onChange={(e) => setEditContent(e.target.value)} 
+                required 
+                rows="5"
+                style={{marginBottom: '1rem'}}
+              />
+              <div className="action-bar">
+                <button type="submit">Save Changes</button>
+                <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>Cancel</button>
               </div>
-            )}
-          </>
-        )}
+            </form>
+          ) : (
+            <>
+              <h1 className="post-title" style={{ fontSize: '1.8rem' }}>{post.title}</h1>
+              <p className="post-meta" style={{ marginBottom: '1.5rem' }}>
+                Posted by <Link to={`/user/${post.username}`} style={{color: 'var(--primary)', fontWeight: '600'}}>u/{post.username}</Link>
+              </p>
+              <p className="post-content" style={{ whiteSpace: 'pre-wrap', fontSize: '1.1rem' }}>{post.content}</p>
+              
+              {currentUserId && parseInt(currentUserId) === post.user_id && (
+                <div className="action-bar" style={{ marginTop: '2rem' }}>
+                  <button className="btn-secondary" onClick={() => setEditing(true)}>Edit Post</button>
+                  <button className="btn-danger" onClick={() => setShowDeleteModal(true)}>Delete Post</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{ marginTop: '3rem' }}>

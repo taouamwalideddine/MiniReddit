@@ -17,7 +17,13 @@ const createPost = async (req, res) => {
 const getAllPosts = async (req, res) => {
     try {
         const allPosts = await pool.query(
-            "SELECT posts.id, posts.title, posts.content, posts.created_at, posts.user_id, users.username FROM posts JOIN users ON posts.user_id = users.id ORDER BY posts.created_at DESC"
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, posts.user_id, users.username, 
+            COALESCE(SUM(post_votes.vote_type), 0) as score 
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            LEFT JOIN post_votes ON posts.id = post_votes.post_id 
+            GROUP BY posts.id, users.username 
+            ORDER BY posts.created_at DESC`
         );
         res.json(allPosts.rows);
     } catch (err) {
@@ -30,7 +36,13 @@ const getPostById = async (req, res) => {
     try {
         const { id } = req.params;
         const post = await pool.query(
-            "SELECT posts.id, posts.title, posts.content, posts.created_at, posts.user_id, users.username FROM posts JOIN users ON posts.user_id = users.id WHERE posts.id = $1",
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, posts.user_id, users.username, 
+            COALESCE(SUM(post_votes.vote_type), 0) as score 
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            LEFT JOIN post_votes ON posts.id = post_votes.post_id 
+            WHERE posts.id = $1 
+            GROUP BY posts.id, users.username`,
             [id]
         );
         if (post.rows.length === 0) return res.status(404).json({ error: "Post not found" });
@@ -69,10 +81,66 @@ const updatePost = async (req, res) => {
     }
 };
 
+const votePost = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { user_id, vote_type } = req.body;
+
+        // Check if user already voted
+        const existingVote = await pool.query(
+            "SELECT * FROM post_votes WHERE user_id = $1 AND post_id = $2",
+            [user_id, id]
+        );
+
+        if (existingVote.rows.length > 0) {
+            // Update existing vote
+            if (existingVote.rows[0].vote_type === vote_type) {
+                // If same vote, remove it (toggle)
+                await pool.query("DELETE FROM post_votes WHERE id = $1", [existingVote.rows[0].id]);
+                return res.json({ message: "Vote removed" });
+            } else {
+                // Change vote
+                await pool.query("UPDATE post_votes SET vote_type = $1 WHERE id = $2", [vote_type, existingVote.rows[0].id]);
+                return res.json({ message: "Vote updated" });
+            }
+        } else {
+            // Insert new vote
+            await pool.query("INSERT INTO post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3)", [user_id, id, vote_type]);
+            return res.status(201).json({ message: "Vote added" });
+        }
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+const getPostsByUser = async (req, res) => {
+    try {
+        const { username } = req.params;
+        const userPosts = await pool.query(
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, posts.user_id, users.username, 
+            COALESCE(SUM(post_votes.vote_type), 0) as score 
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            LEFT JOIN post_votes ON posts.id = post_votes.post_id 
+            WHERE users.username = $1
+            GROUP BY posts.id, users.username 
+            ORDER BY posts.created_at DESC`,
+            [username]
+        );
+        res.json(userPosts.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
 module.exports = {
     createPost,
     getAllPosts,
     getPostById,
     updatePost,
-    deletePost
+    deletePost,
+    votePost,
+    getPostsByUser
 };

@@ -4,10 +4,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import PostDetail from './pages/PostDetail';
+import UserProfile from './pages/UserProfile';
 import './App.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   // Check login status on mount and when route changes
@@ -32,6 +34,17 @@ function App() {
             <h2>MiniReddit</h2>
           </Link>
         </div>
+        
+        <div className="search-container">
+          <input 
+            type="text" 
+            placeholder="Search posts..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </div>
+
         <div className="nav-links">
           <Link to="/" className="nav-item">Home</Link>
           {isLoggedIn ? (
@@ -47,8 +60,9 @@ function App() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home searchQuery={searchQuery} />} />
           <Route path="/post/:id" element={<PostDetail />} />
+          <Route path="/user/:username" element={<UserProfile />} />
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/register" element={<Register />} />
         </Routes>
