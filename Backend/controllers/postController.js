@@ -86,25 +86,20 @@ const votePost = async (req, res) => {
         const { id } = req.params;
         const { user_id, vote_type } = req.body;
 
-        // Check if user already voted
         const existingVote = await pool.query(
             "SELECT * FROM post_votes WHERE user_id = $1 AND post_id = $2",
             [user_id, id]
         );
 
         if (existingVote.rows.length > 0) {
-            // Update existing vote
             if (existingVote.rows[0].vote_type === vote_type) {
-                // If same vote, remove it (toggle)
                 await pool.query("DELETE FROM post_votes WHERE id = $1", [existingVote.rows[0].id]);
                 return res.json({ message: "Vote removed" });
             } else {
-                // Change vote
                 await pool.query("UPDATE post_votes SET vote_type = $1 WHERE id = $2", [vote_type, existingVote.rows[0].id]);
                 return res.json({ message: "Vote updated" });
             }
         } else {
-            // Insert new vote
             await pool.query("INSERT INTO post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3)", [user_id, id, vote_type]);
             return res.status(201).json({ message: "Vote added" });
         }

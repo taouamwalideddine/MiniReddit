@@ -11,7 +11,7 @@ function Home({ searchQuery }) {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   
-  // Custom Modal & Toasts
+
   const [toastMessage, setToastMessage] = useState('');
   const [deleteModalPostId, setDeleteModalPostId] = useState(null);
 
@@ -118,21 +118,21 @@ function Home({ searchQuery }) {
     }
   };
 
-  // Filter posts based on search query
+
   const filteredPosts = posts.filter(post => 
     post.title.toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   return (
     <div>
-      {/* Toast Notification */}
+
       {toastMessage && (
         <div className="toast-container">
           <div className="toast">{toastMessage}</div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+
       {deleteModalPostId && (
         <div className="modal-overlay">
           <div className="modal">
@@ -189,14 +189,14 @@ function Home({ searchQuery }) {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {filteredPosts.map((post) => (
             <div key={post.id} className="card post-layout">
-              {/* Voting Side */}
+
               <div className="vote-container">
                 <button className="vote-btn upvote" onClick={() => handleVote(post.id, 1)}>▲</button>
                 <span className="vote-score">{post.score}</span>
                 <button className="vote-btn downvote" onClick={() => handleVote(post.id, -1)}>▼</button>
               </div>
 
-              {/* Post Body Side */}
+
               <div className="post-body">
                 {editingId === post.id ? (
                   <form onSubmit={(e) => handleUpdatePost(e, post.id)}>

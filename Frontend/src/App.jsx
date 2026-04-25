@@ -12,7 +12,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  // Check login status on mount and when route changes
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);

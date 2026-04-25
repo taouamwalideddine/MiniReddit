@@ -8,12 +8,12 @@ function PostDetail() {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // Edit State
+
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
 
-  // Toasts & Modals
+
   const [toastMessage, setToastMessage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -143,14 +143,14 @@ function PostDetail() {
 
   return (
     <div>
-      {/* Toast Notification */}
+
       {toastMessage && (
         <div className="toast-container">
           <div className="toast">{toastMessage}</div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+
       {showDeleteModal && (
         <div className="modal-overlay">
           <div className="modal">
